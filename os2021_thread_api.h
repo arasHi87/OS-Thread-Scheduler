@@ -5,6 +5,7 @@
 #define _XOPEN_SOURCE 600
 
 #include "function_libary.h"
+#include "parse_json.h"
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -14,15 +15,15 @@
 #include <ucontext.h>
 #include <unistd.h>
 
-int OS2021_ThreadCreate(char* job_name, char* p_function, char* priority, int cancel_mode);
-void OS2021_ThreadCancel(char* job_name);
+int OS2021_ThreadCreate(char *job_name, char *p_function, char *priority, int cancel_mode);
+void OS2021_ThreadCancel(char *job_name);
 void OS2021_ThreadWaitEvent(int event_id);
 void OS2021_ThreadSetEvent(int event_id);
 void OS2021_ThreadWaitTime(int msec);
 void OS2021_DeallocateThreadResource();
 void OS2021_TestCancel();
 
-void CreateContext(ucontext_t*, ucontext_t*, void*);
+void CreateContext(ucontext_t *, ucontext_t *, void *);
 void ResetTimer();
 void Dispatcher();
 void StartSchedulingSimulation();

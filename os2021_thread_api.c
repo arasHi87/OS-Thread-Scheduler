@@ -63,6 +63,9 @@ void StartSchedulingSimulation()
     Signaltimer.it_interval.tv_usec = 0;
     Signaltimer.it_interval.tv_sec = 0;
     ResetTimer();
+
+    json_parse_and_init_thread();
+
     /*Create Context*/
     // CreateContext(&dispatch_context, &timer_context, &Dispatcher);
     // setcontext(&dispatch_context);
