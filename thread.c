@@ -26,3 +26,43 @@ thread *thread_create(char *name, char *priority, int id, int cancel_mode)
 
     return tmp;
 }
+
+void inq(thread **head, thread **node)
+{
+    thread *tmp = (*head), *prev = NULL;
+    if (!tmp)
+        (*head) = (*node), (*node)->next = NULL;
+    else
+    {
+        while (tmp)
+        {
+            if (tmp->c_priority >= (*node)->c_priority)
+                prev = tmp, tmp = tmp->next;
+            else
+            {
+                (*node)->next = tmp;
+                if (tmp != (*head))
+                    prev->next = (*node);
+                else
+                    (*head) = (*node);
+                break;
+            }
+        }
+        if (!tmp)
+            prev->next = (*node);
+    }
+    return;
+}
+
+thread *deq(thread **head)
+{
+    if (!(*head))
+        return NULL;
+    else
+    {
+        thread *tmp = (*head);
+        (*head) = (*head)->next;
+        tmp->next = NULL;
+        return tmp;
+    }
+}

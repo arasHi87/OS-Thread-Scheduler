@@ -28,5 +28,7 @@ typedef struct thread
 } thread;
 
 thread *thread_create(char *name, char *priority, int id, int cancel_mode);
+void inq(thread **head, thread **node);
+thread *deq(thread **head);
 
 #endif
