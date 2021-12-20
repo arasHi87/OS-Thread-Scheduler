@@ -55,6 +55,24 @@ void OS2021_ThreadWaitEvent(int event_id)
 
 void OS2021_ThreadSetEvent(int event_id)
 {
+    thread *tmp = wait_head, *prev = NULL;
+    while (tmp)
+    {
+        if (tmp->wait_id != event_id)
+            prev = tmp, tmp = tmp->next;
+        else
+        {
+            tmp->wait_id = -1;
+            if (tmp == wait_head)
+                wait_head = wait_head->next;
+            else
+                prev->next = tmp->next, tmp->next = NULL;
+            printf("%s changed %s state to ready\n", running->name, tmp->name);
+            inq(ready_head, tmp);
+            return;
+        }
+    }
+    return;
 }
 
 void OS2021_ThreadWaitTime(int msec)
