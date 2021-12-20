@@ -4,9 +4,36 @@ struct itimerval Signaltimer;
 ucontext_t dispatch_context;
 ucontext_t timer_context;
 
+int thread_id = 0;
+long time_past = 0;
+
+/* use to matain running thread and queue*/
+thread *running = NULL;
+thread *wait_head = NULL;
+thread *ready_head = NULL;
+thread *terminate_head = NULL;
+
 int OS2021_ThreadCreate(char *job_name, char *p_function, char *priority, int cancel_mode)
 {
-    return -1;
+    thread *tmp = thread_create(job_name, priority, thread_id++, cancel_mode);
+
+    if (!strcmp(p_function, "Function1"))
+        CreateContext(&(tmp->ctx), &dispatch_context, &Function1);
+    else if (!strcmp(p_function, "Function2"))
+        CreateContext(&(tmp->ctx), &dispatch_context, &Function2);
+    else if (!strcmp(p_function, "Function3"))
+        CreateContext(&(tmp->ctx), &dispatch_context, &Function3);
+    else if (!strcmp(p_function, "Function4"))
+        CreateContext(&(tmp->ctx), &dispatch_context, &Function4);
+    else if (!strcmp(p_function, "Function5"))
+        CreateContext(&(tmp->ctx), &dispatch_context, &Function5);
+    else
+    {
+        free(tmp);
+        return -1;
+    }
+
+    return tmp->id;
 }
 
 void OS2021_ThreadCancel(char *job_name)
@@ -59,14 +86,16 @@ void Dispatcher()
 
 void StartSchedulingSimulation()
 {
-    /*Set Timer*/
+    /* Set Timer */
     Signaltimer.it_interval.tv_usec = 0;
     Signaltimer.it_interval.tv_sec = 0;
     ResetTimer();
 
+    /* create context and init thread*/
+    CreateContext(&dispatch_context, NULL, &Dispatcher);
+    OS2021_ThreadCreate("reclaimer", "ResourceReclaim", "L", 1);
     json_parse_and_init_thread();
 
-    /*Create Context*/
-    // CreateContext(&dispatch_context, &timer_context, &Dispatcher);
-    // setcontext(&dispatch_context);
+    /* scheduling */
+    setcontext(&dispatch_context);
 }
