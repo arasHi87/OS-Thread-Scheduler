@@ -2,6 +2,7 @@
 #define _THREAD_H_
 #define _XOPEN_SOURCE 600
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
 
@@ -30,5 +31,6 @@ typedef struct thread
 thread *thread_create(char *name, char *priority, int id, int cancel_mode);
 void inq(thread **head, thread **node);
 thread *deq(thread **head);
+void change_priority(thread **target, int time_past, int time_quantum);
 
 #endif

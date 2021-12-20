@@ -1,5 +1,7 @@
 #include "thread.h"
 
+char priority_map[3] = {'L', 'M', 'H'};
+
 thread *thread_create(char *name, char *priority, int id, int cancel_mode)
 {
     int pri;
@@ -64,5 +66,27 @@ thread *deq(thread **head)
         (*head) = (*head)->next;
         tmp->next = NULL;
         return tmp;
+    }
+}
+
+void change_priority(thread **target, int time_past, int time_quantum)
+{
+    if (time_past < time_quantum)
+    {
+        if ((*target)->c_priority != 2)
+        {
+            (*target)->c_priority++;
+            printf("The priority of %s was changed from %c to %c\n", (*target)->name,
+                   priority_map[(*target)->c_priority - 1], priority_map[(*target)->c_priority]);
+        }
+    }
+    else
+    {
+        if ((*target)->c_priority != 0)
+        {
+            (*target)->c_priority--;
+            printf("The priority of %s was changed fomr %c to %c\n", (*target)->name,
+                   priority_map[(*target)->c_priority + 1], priority_map[(*target)->c_priority]);
+        }
     }
 }

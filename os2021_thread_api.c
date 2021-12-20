@@ -6,6 +6,7 @@ ucontext_t timer_context;
 
 int thread_id = 0;
 long time_past = 0;
+int time_quantum[3] = {300, 200, 100};
 
 /* use to matain running thread and queue*/
 thread *running = NULL;
@@ -43,6 +44,13 @@ void OS2021_ThreadCancel(char *job_name)
 
 void OS2021_ThreadWaitEvent(int event_id)
 {
+    thread *tmp = running;
+    tmp->wait_id = event_id;
+
+    printf("%s wants to wait event %d\n", tmp->name, event_id);
+    change_priority(&tmp, time_past, time_quantum[tmp->c_priority]);
+    inq(&wait_head, &tmp);
+    swapcontext(&(tmp->ctx), &dispatch_context);
 }
 
 void OS2021_ThreadSetEvent(int event_id)
