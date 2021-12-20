@@ -24,8 +24,8 @@ void json_parse_and_init_thread()
         json_object_object_get_ex(thread, "priority", &priority);
         json_object_object_get_ex(thread, "cancel mode", &cancel_mode);
 
-        if (~OS2021_ThreadCreate((char *)json_object_get_string(name), (char *)json_object_get_string(entry),
-                                 (char *)json_object_get_string(priority), (char *)json_object_get_string(cancel_mode)))
-            printf("Thread init error");
+        if (!~OS2021_ThreadCreate((char *)json_object_get_string(name), (char *)json_object_get_string(entry),
+                                  (char *)json_object_get_string(priority), json_object_get_int(cancel_mode)))
+            puts("Thread init error");
     }
 }
