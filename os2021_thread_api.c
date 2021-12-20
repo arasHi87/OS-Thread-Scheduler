@@ -33,6 +33,7 @@ int OS2021_ThreadCreate(char *job_name, char *p_function, char *priority, int ca
         return -1;
     }
 
+    inq(&ready_head, &tmp);
     return tmp->id;
 }
 
@@ -82,6 +83,9 @@ void ResetTimer()
 
 void Dispatcher()
 {
+    running = deq(&ready_head), time_past = 0;
+    ResetTimer();
+    setcontext(&(running->ctx));
 }
 
 void StartSchedulingSimulation()
@@ -89,7 +93,6 @@ void StartSchedulingSimulation()
     /* Set Timer */
     Signaltimer.it_interval.tv_usec = 0;
     Signaltimer.it_interval.tv_sec = 0;
-    ResetTimer();
 
     /* create context and init thread*/
     CreateContext(&dispatch_context, NULL, &Dispatcher);
