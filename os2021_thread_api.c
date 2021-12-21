@@ -149,6 +149,13 @@ void OS2021_ThreadSetEvent(int event_id)
 
 void OS2021_ThreadWaitTime(int msec)
 {
+    thread *tmp = running;
+
+    change_priority(&tmp, time_past, time_quantum[tmp->c_priority]);
+    tmp->need_wait = msec;
+    tmp->next = NULL;
+    inq(&wait_head, &tmp);
+    swapcontext(&(tmp->ctx), &dispatch_context);
 }
 
 void OS2021_DeallocateThreadResource()
