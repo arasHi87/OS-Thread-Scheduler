@@ -160,6 +160,14 @@ void OS2021_ThreadWaitTime(int msec)
 
 void OS2021_DeallocateThreadResource()
 {
+    thread *tmp = terminate_head;
+    while (tmp)
+    {
+        printf("The memory space of %s had been release\n", tmp->name);
+        terminate_head = terminate_head->next;
+        free(tmp);
+        tmp = terminate_head;
+    }
 }
 
 void OS2021_TestCancel()
