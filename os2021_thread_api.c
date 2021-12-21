@@ -40,6 +40,78 @@ int OS2021_ThreadCreate(char *job_name, char *p_function, char *priority, int ca
 
 void OS2021_ThreadCancel(char *job_name)
 {
+    thread *tmp = ready_head, *target = NULL, *prev = NULL;
+    if (strcmp(job_name, "reclaimer"))
+    {
+        /* try to find target job in ready queue or wait queue and cancel it */
+
+        // find in ready queue
+        while (tmp != NULL)
+        {
+            if (!strcmp(job_name, tmp->name))
+            {
+                target = tmp;
+                break;
+            }
+            else
+                prev = tmp, tmp = tmp->next;
+        }
+
+        // try to find in wait queue if have no result in ready queue
+        if (!target)
+        {
+            tmp = wait_head, prev = NULL;
+            while (tmp)
+            {
+                if (!strcmp(job_name, tmp->name))
+                {
+                    target = tmp;
+                    break;
+                }
+                else
+                    prev = tmp, tmp = tmp->next;
+            }
+        }
+
+        // if still not found in both queue, check if is running thred
+        if (!target)
+        {
+            if (!strcmp(job_name, running->name))
+            {
+                target = running, target->cancel_mark = 1;
+                if (target->cancel_mode)
+                {
+                    printf("%s wants to cancel %s\n", running->name, target->name);
+                    return;
+                }
+                else
+                    inq(&terminate_head, &target);
+                swapcontext(&(target->ctx), &dispatch_context);
+            }
+        }
+
+        // if find target want to be terminate, then deal its cancel
+        if (target)
+        {
+            target->cancel_mark = 1;
+            if (target->cancel_mode)
+                printf("%s wants to cancel %s\n", running->name, target->name);
+            else
+            {
+                // dequeue from queue
+                if (target == wait_head)
+                    wait_head = wait_head->next;
+                else if (target == ready_head)
+                    ready_head = ready_head->next;
+                else
+                    prev->next = target->next;
+
+                // cancel thread immediately
+                inq(&terminate_head, &target);
+                printf("%s cancel %s", running->name, target->name);
+            }
+        }
+    }
 }
 
 void OS2021_ThreadWaitEvent(int event_id)
@@ -68,7 +140,7 @@ void OS2021_ThreadSetEvent(int event_id)
             else
                 prev->next = tmp->next, tmp->next = NULL;
             printf("%s changed %s state to ready\n", running->name, tmp->name);
-            inq(ready_head, tmp);
+            inq(&ready_head, &tmp);
             return;
         }
     }
@@ -85,6 +157,11 @@ void OS2021_DeallocateThreadResource()
 
 void OS2021_TestCancel()
 {
+    if (running->cancel_mark)
+    {
+        inq(&terminate_head, &running);
+        setcontext(&dispatch_context);
+    }
 }
 
 void CreateContext(ucontext_t *context, ucontext_t *next_context, void *func)
