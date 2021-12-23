@@ -7,6 +7,7 @@ ucontext_t timer_context;
 int thread_id = 0;
 long time_past = 0;
 int time_quantum[3] = {300, 200, 100};
+char _priority_map[3] = {'L', 'M', 'H'};
 
 /* use to matain running thread and queue*/
 thread *running = NULL;
@@ -28,6 +29,8 @@ int OS2021_ThreadCreate(char *job_name, char *p_function, char *priority, int ca
         CreateContext(&(tmp->ctx), &dispatch_context, &Function4);
     else if (!strcmp(p_function, "Function5"))
         CreateContext(&(tmp->ctx), &dispatch_context, &Function5);
+    else if (strcmp(p_function, "ResourceReclaim") == 0)
+        CreateContext(&(tmp->ctx), NULL, &ResourceReclaim);
     else
     {
         free(tmp);
@@ -79,7 +82,7 @@ void OS2021_ThreadCancel(char *job_name)
             if (!strcmp(job_name, running->name))
             {
                 target = running, target->cancel_mark = 1;
-                if (target->cancel_mode)
+                if (target->cancel_mode == 0)
                 {
                     printf("%s wants to cancel %s\n", running->name, target->name);
                     return;
@@ -192,11 +195,63 @@ void CreateContext(ucontext_t *context, ucontext_t *next_context, void *func)
 void ResetTimer()
 {
     Signaltimer.it_value.tv_sec = 0;
-    Signaltimer.it_value.tv_usec = 0;
+    Signaltimer.it_value.tv_usec = 10000;
     if (setitimer(ITIMER_REAL, &Signaltimer, NULL) < 0)
     {
         printf("ERROR SETTING TIME SIGALRM!\n");
     }
+}
+
+void TimerHandler()
+{
+    time_past += 10;
+    thread *tmp = ready_head, *prev = NULL;
+
+    // add ready queue time
+    while (tmp != NULL)
+        tmp->r_qtime += 10, tmp = tmp->next;
+
+    // add wait queue time
+    tmp = wait_head;
+    while (tmp != NULL)
+    {
+        tmp->w_qtime += 10;
+        if (tmp->need_wait != 0)
+        {
+            tmp->already_wait += 1;
+            if (tmp->already_wait >= tmp->need_wait)
+            {
+                tmp->need_wait = tmp->already_wait = 0;
+                if (tmp == wait_head)
+                    wait_head = wait_head->next;
+                else
+                    prev->next = tmp->next;
+                inq(&ready_head, &tmp);
+            }
+        }
+        prev = tmp, tmp = tmp->next;
+    }
+
+    // chack time quantum
+    if (time_past >= time_quantum[running->c_priority])
+    {
+        if (running->cancel_mark == 1)
+            inq(&terminate_head, &running);
+        else
+        {
+            if (running->c_priority != 0)
+            {
+                running->c_priority -= 1;
+                printf("The priority of %s is change from %c to %c\n", running->name,
+                       _priority_map[running->c_priority + 1], _priority_map[running->c_priority]);
+            }
+            inq(&ready_head, &running);
+        }
+        swapcontext(&(running->ctx), &dispatch_context);
+    }
+
+    ResetTimer();
+    return;
 }
 
 void Dispatcher()
@@ -211,6 +266,7 @@ void StartSchedulingSimulation()
     /* Set Timer */
     Signaltimer.it_interval.tv_usec = 0;
     Signaltimer.it_interval.tv_sec = 0;
+    signal(SIGALRM, TimerHandler);
 
     /* create context and init thread*/
     CreateContext(&dispatch_context, NULL, &Dispatcher);
