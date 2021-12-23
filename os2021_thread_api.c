@@ -261,12 +261,39 @@ void Dispatcher()
     setcontext(&(running->ctx));
 }
 
+void Report()
+{
+    thread *tmp = ready_head;
+    puts("\n**************************************************************************************************");
+    printf("*\tTID\tName\t\tState\t\tB_Priority\tC_Priority\tQ_Time\tW_time\t *\n");
+    printf("*\t%d\t%-10s\tRUNNING\t\t%c\t\t%c\t\t%ld\t%ld\t *\n", running->id, running->name,
+           _priority_map[running->b_priority], _priority_map[running->c_priority], running->r_qtime, running->w_qtime);
+
+    // print ready queue
+    while (tmp)
+    {
+        printf("*\t%d\t%-10s\tREADY\t\t%c\t\t%c\t\t%ld\t%ld\t *\n", tmp->id, tmp->name, _priority_map[tmp->b_priority],
+               _priority_map[tmp->c_priority], tmp->r_qtime, tmp->w_qtime);
+        tmp = tmp->next;
+    }
+
+    // print wait queue
+    while (tmp)
+    {
+        printf("*\t%d\t%-10s\tWAITTING\t\t%c\t\t%c\t\t%ld\t%ld\t *\n", tmp->id, tmp->name,
+               _priority_map[tmp->b_priority], _priority_map[tmp->c_priority], tmp->r_qtime, tmp->w_qtime);
+        tmp = tmp->next;
+    }
+    puts("**************************************************************************************************");
+}
+
 void StartSchedulingSimulation()
 {
     /* Set Timer */
     Signaltimer.it_interval.tv_usec = 0;
     Signaltimer.it_interval.tv_sec = 0;
     signal(SIGALRM, TimerHandler);
+    signal(SIGTSTP, Report);
 
     /* create context and init thread*/
     CreateContext(&dispatch_context, NULL, &Dispatcher);
